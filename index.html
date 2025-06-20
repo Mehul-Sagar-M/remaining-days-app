@@ -3,51 +3,217 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Days Remaining in the Year</title>
+  <title>Remaining Days in Year</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f5f5;
       text-align: center;
-      padding: 50px;
+      padding: 30px;
+      transition: background-color 0.3s, color 0.3s;
     }
     h1 {
       color: #333;
+      transition: color 0.3s;
     }
-    button {
+    select {
       padding: 10px 20px;
       font-size: 16px;
-      margin-top: 20px;
+      margin-top: 10px;
       cursor: pointer;
       background-color: #4CAF50;
       color: white;
       border: none;
       border-radius: 8px;
     }
+    .toggle-container {
+      margin: 15px auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+    .toggle-icon {
+      font-size: 20px;
+      color: #333;
+      transition: color 0.3s, transform 0.3s;
+    }
+    .dark-mode .toggle-icon {
+      color: white;
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    .glass-container {
+      margin-top: 20px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: 16px;
+      padding: 20px;
+      display: inline-block;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
     .result {
-      margin-top: 30px;
       font-size: 18px;
       color: #555;
+    }
+    .percentage {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #333;
+    }
+    progress {
+      width: 80%;
+      height: 20px;
+      margin-top: 20px;
+    }
+    #percentBar {
+      margin-top: 8px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .dark-mode {
+      background-color: #1c1c1c;
+      color: white;
+    }
+    .dark-mode h1 {
+      color: white;
+    }
+    .dark-mode .result {
+      text-align: right;
+      color: #eee;
+    }
+    .dark-mode .percentage {
+      text-align: right;
+      color: #ccc;
+    }
+    .quote {
+      font-style: italic;
+      margin-top: 30px;
+      color: #0077cc;
     }
   </style>
 </head>
 <body>
   <h1>Days Remaining in the Year</h1>
-  <button onclick="calculateDays()">Check Remaining Days</button>
-  <div class="result" id="result"></div>
+  <label for="year">Choose Year:</label>
+  <select id="year"></select>
+
+  <div class="toggle-container">
+    <span class="toggle-icon">☀️</span>
+    <label class="toggle-switch">
+      <input type="checkbox" id="themeToggle" onchange="toggleDarkMode()">
+      <span class="slider"></span>
+    </label>
+    <span class="toggle-icon">🌙</span>
+  </div>
+
+  <div class="glass-container">
+    <div class="result" id="result"></div>
+    <div class="percentage" id="percentage"></div>
+  </div>
+  <progress id="yearProgress" value="0" max="365"></progress>
+  <div id="percentBar"></div>
+  <div class="quote" id="quote"></div>
 
   <script>
+    const quotes = [
+      "Make each day count.",
+      "You still have time!",
+      "Stay focused!",
+      "Every day is a new beginning.",
+      "Don't count the days, make the days count."
+    ];
+
+    function populateYearOptions() {
+      const yearSelect = document.getElementById('year');
+      const currentYear = new Date().getFullYear();
+      for (let i = currentYear - 2; i <= currentYear + 5; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.text = i;
+        if (i === currentYear) option.selected = true;
+        yearSelect.appendChild(option);
+      }
+    }
+
     function calculateDays() {
+      const selectedYear = parseInt(document.getElementById('year').value);
       const today = new Date();
-      const endOfYear = new Date(today.getFullYear(), 11, 31); // Month is 0-indexed
-      const diffTime = endOfYear - today;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      const options = { year: 'numeric', month: 'long', day: 'numeric' };
-      const todayStr = today.toLocaleDateString(undefined, options);
+      const startOfYear = new Date(selectedYear, 0, 1);
+      const endOfYear = new Date(selectedYear, 11, 31, 23, 59, 59);
+      const isCurrentYear = today.getFullYear() === selectedYear;
+      const now = isCurrentYear ? today : new Date(selectedYear, 0, 1);
+      const totalDays = Math.ceil((endOfYear - startOfYear) / (1000 * 60 * 60 * 24));
+      const daysRemaining = Math.ceil((endOfYear - now) / (1000 * 60 * 60 * 24));
+      const daysPassed = totalDays - daysRemaining;
+      const percentComplete = ((daysPassed / totalDays) * 100).toFixed(2);
+      const todayStr = today.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 
       document.getElementById("result").innerHTML =
-        `Today's Date: <strong>${todayStr}</strong><br>Remaining Days: <strong>${diffDays}</strong>`;
+        `Today's Date: <strong>${todayStr}</strong><br>` +
+        `Selected Year: <strong>${selectedYear}</strong><br>` +
+        `Remaining Days: <strong>${daysRemaining}</strong>`;
+
+      document.getElementById("percentage").innerText =
+        `Year ${selectedYear} is ${percentComplete}% complete.`;
+
+      document.getElementById("yearProgress").max = totalDays;
+      document.getElementById("yearProgress").value = daysPassed;
+      document.getElementById("percentBar").innerText = `${percentComplete}% complete`;
+
+      document.getElementById("quote").innerText = quotes[Math.floor(Math.random() * quotes.length)];
     }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+    }
+
+    function updateLiveCountdown() {
+      calculateDays();
+      setTimeout(updateLiveCountdown, 10000);
+    }
+
+    populateYearOptions();
+    updateLiveCountdown();
   </script>
 </body>
 </html>
